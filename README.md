@@ -6,6 +6,65 @@ This project deploys a scalable and highly available AWS infrastructure based on
 
 A visual representation of the infrastructure created by this project can be found in the [architecture.mmd](./architecture.mmd) file. This file uses Mermaid syntax and can be rendered by various Markdown tools and extensions (including natively on GitHub).
 
+```text
++-------------------------------------------------------------------+
+|                            AWS Cloud                              |
++-------------------------------------------------------------------+
+      |
+      v
++-------------------------------------------------------------------+
+|               VPC (e.g., 10.0.0.0/16)                             |
+|           (modules/network/main.tf)                               |
+|                                                                   |
+|   +-------------------------+  +-------------------------+  +-------------------------+
+|   |   Availability Zone 1   |  |   Availability Zone 2   |  |   Availability Zone 3   |
+|   |-------------------------|  |-------------------------|  |-------------------------|
+|   |                         |  |                         |  |                         |
+|   | [Public Subnet 1]       |  | [Public Subnet 2]       |  | [Public Subnet 3]       |
+|   |   (10.0.1.0/24)         |  |   (10.0.2.0/24)         |  |   (10.0.3.0/24)         |
+|   |  - ALB Node             |  |  - ALB Node             |  |  - ALB Node             |
+|   |    (compute/main.tf)    |  |    (compute/main.tf)    |  |    (compute/main.tf)    |
+|   |  - NAT Gateway 1        |  |  - NAT Gateway 2        |  |  - NAT Gateway 3        |
+|   |    (network/main.tf)    |  |    (network/main.tf)    |  |    (network/main.tf)    |
+|   |     (Route to IGW)      |  |     (Route to IGW)      |  |     (Route to IGW)      |
+|   |                         |  |                         |  |                         |
+|   |-------------------------|  |-------------------------|  |-------------------------|
+|   |                         |  |                         |  |                         |
+|   | [Private Subnet 1]      |  | [Private Subnet 2]      |  | [Private Subnet 3]      |
+|   |   (10.0.11.0/24)        |  |   (10.0.12.0/24)        |  |   (10.0.13.0/24)        |
+|   |  - ECS Task(s)          |  |  - ECS Task(s)          |  |  - ECS Task(s)          |
+|   |    (compute/main.tf)    |  |    (compute/main.tf)    |  |    (compute/main.tf)    |
+|   |     (Route to NAT 1)    |  |     (Route to NAT 2)    |  |     (Route to NAT 3)    |
+|   |                         |  |                         |  |                         |
+|   |-------------------------|  |-------------------------|  |-------------------------|
+|   |                         |  |                         |  |                         |
+|   | [DB Subnet 1]           |  | [DB Subnet 2]           |  | [DB Subnet 3]           |
+|   |   (10.0.21.0/24)        |  |   (10.0.22.0/24)        |  |   (10.0.23.0/24)        |
+|   |  - RDS Instance P/S     |  |  - RDS Instance S/P     |  |  - RDS Instance S/P     |
+|   |    (database/main.tf)   |  |    (database/main.tf)   |  |    (database/main.tf)   |
+|   |     (Route to NAT 1)    |  |     (Route to NAT 2)    |  |     (Route to NAT 3)    |
+|   |                         |  |                         |  |                         |
+|   +-------------------------+  +-------------------------+  +-------------------------+
+|                                                                   |
+|   +---------------------------+                                   |
+|   | Internet Gateway (IGW)    |<--------------------------------->| Internet
+|   |   (network/main.tf)       |                                   |
+|   +---------------------------+                                   |
+|                                                                   |
++-------------------------------------------------------------------+
+
+Key:
+- ALB = Application Load Balancer (spans Public Subnets)
+- NAT = NAT Gateway (provides outbound internet for Private/DB)
+- ECS = Elastic Container Service (Fargate Tasks running app)
+- RDS = Relational Database Service (MySQL Instance, P=Primary, S=Standby)
+- Routes indicate default route for internet-bound traffic
+
+Traffic Flow:
+Internet -> IGW -> ALB (Public) -> ECS (Private) -> RDS (DB)
+ECS (Private) -> NAT (Public) -> IGW -> Internet (for outbound)
+```
+
 ## Structure
 
 *   `main.tf`: Main configuration invoking modules.
