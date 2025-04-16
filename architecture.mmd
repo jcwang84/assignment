@@ -1,0 +1,84 @@
+```mermaid
+graph TD
+    subgraph AWS Cloud
+        subgraph VPC
+            direction LR
+            subgraph AZ1
+                direction TB
+                subgraph "Public Subnet 1"
+                    ALB(App Load Balancer) --> ECS1(ECS Service / Tasks)
+                    NAT1(NAT Gateway 1)
+                end
+                subgraph "Private Subnet 1"
+                    ECS1
+                end
+                subgraph "DB Subnet 1"
+                    RDS1(RDS Instance - Primary/Standby)
+                end
+                ECS1 --> RDS1
+            end
+
+            subgraph AZ2
+                direction TB
+                subgraph "Public Subnet 2"
+                     ALB --> ECS2(ECS Service / Tasks)
+                     NAT2(NAT Gateway 2)
+                end
+                subgraph "Private Subnet 2"
+                     ECS2
+                end
+                 subgraph "DB Subnet 2"
+                    RDS2(RDS Instance - Standby/Primary)
+                end
+                ECS2 --> RDS2
+            end
+
+            subgraph AZ3
+                 direction TB
+                 subgraph "Public Subnet 3"
+                     ALB --> ECS3(ECS Service / Tasks)
+                     NAT3(NAT Gateway 3)
+                 end
+                 subgraph "Private Subnet 3"
+                    ECS3
+                 end
+                 subgraph "DB Subnet 3"
+                     RDS3(RDS Instance - Standby/Primary)
+                 end
+                 ECS3 --> RDS3
+            end
+
+            IGW(Internet Gateway)
+            style ALB fill:#f9f,stroke:#333,stroke-width:2px
+            style ECS1 fill:#ccf,stroke:#333,stroke-width:2px
+            style ECS2 fill:#ccf,stroke:#333,stroke-width:2px
+            style ECS3 fill:#ccf,stroke:#333,stroke-width:2px
+            style RDS1 fill:#bbf,stroke:#333,stroke-width:2px
+            style RDS2 fill:#bbf,stroke:#333,stroke-width:2px
+            style RDS3 fill:#bbf,stroke:#333,stroke-width:2px
+            style IGW fill:#cdf,stroke:#333,stroke-width:2px
+            style NAT1 fill:#def,stroke:#333,stroke-width:2px
+            style NAT2 fill:#def,stroke:#333,stroke-width:2px
+            style NAT3 fill:#def,stroke:#333,stroke-width:2px
+
+        end
+    end
+
+    Internet([Internet]) --> IGW
+    IGW --> ALB
+    ECS1 --> NAT1
+    ECS2 --> NAT2
+    ECS3 --> NAT3
+    RDS1 <-.-> RDS2
+    RDS2 <-.-> RDS3
+    RDS1 <-.-> RDS3
+```
+
+**Notes:**
+
+*   This diagram simplifies the setup slightly for clarity (e.g., showing RDS as potentially multi-AZ across the DB subnets).
+*   ECS Service/Tasks represent the compute layer placed in private subnets.
+*   The Application Load Balancer (ALB) spans the public subnets.
+*   NAT Gateways reside in public subnets and provide outbound internet access for private resources.
+*   RDS instances reside in the DB subnets.
+*   Arrows indicate primary traffic flow or dependencies. 
